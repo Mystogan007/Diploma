@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Sockets;
-using System.Reflection;
 using System.Text;
+using HttpServer.MyServer.Support;
 
-namespace HttpServer
+namespace HttpServer.MyServer
 {
-    public class Response
+    class Response
     {
-       public readonly byte[] data = null;
+        /// <summary>
+        /// Возвращает код состояния ответа.
+        /// </summary>
+        public HttpStatusCode StatusCode { get; private set; }
+
+        public readonly byte[] data = null;
         public readonly String status;
         public readonly string mime;
 
@@ -19,11 +22,6 @@ namespace HttpServer
             this.status = status;
             this.mime = mime;
         }
-
-
-
-
-    
 
     }
 }
