@@ -98,9 +98,6 @@ namespace HttpServer
 
 
         #region Методы (открытые)
-       
-
-        #endregion
         // Загружает запрос
         public void LoadRequest()
         {
@@ -124,6 +121,9 @@ namespace HttpServer
                 ParseBody();
             }
         }
+
+        #endregion
+
 
         #region Методы (закрытые)
 
