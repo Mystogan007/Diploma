@@ -84,8 +84,7 @@ namespace HttpServer
 
         #endregion
 
-                                   
-
+        #region Конструктор                  
         public Request(byte[] requestBytes)
         {
             _requestArray = requestBytes;
@@ -95,6 +94,10 @@ namespace HttpServer
             Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         }
+
+        #endregion
+
+
 
 
         #region Методы (открытые)

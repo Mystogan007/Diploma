@@ -10,9 +10,9 @@ namespace HttpServer.MyServer
 {
     public class Response
     {
-        public const string MsgPath = @"\root\msg";
+
         public const string WebPath = @"\root\web";
-        public const string TempPath = @"\root\temp";
+        public const string StoragePath = @"\root\storage";
 
 
         public const string ServerName = "Modeling server v0.1";
@@ -30,26 +30,31 @@ namespace HttpServer.MyServer
 
         public string HandleRequest()
         {
-            if (request == null)
+            if (request == null | request.HasError)
                 return "Send bad request";
 
-            if (request.HasError)
+            else if (request.Method == HttpMethod.GET)
+                return GetHandleGetResult();
+
+
+            else if (request.Method == HttpMethod.POST)
+                return GetHandlePostResult();
+
+            else
                 return "Send bad request";
-
-            if (request.Method == HttpMethod.GET && request.Parameters.ContainsValue("favicon.ico"))
-                return "Send favicon.ico";
-
-            if (request.Method == HttpMethod.GET)
-                return "Send start page";
-
-            if (request.Method == HttpMethod.POST)
-                return GetHandleResult();
-
-
-            return "Send bad request";
         }
 
-        private string GetHandleResult()
+        private string GetHandleGetResult()
+        {
+
+            if (request.Parameters["nameOfFileInStartLine"] == string.Empty)
+                return "Send start page";
+
+            else
+                return "Send file";
+        }
+
+        private string GetHandlePostResult()
         {
             if (request.Parameters.ContainsKey("action"))
                 switch (request.Parameters["action"])
@@ -82,7 +87,7 @@ namespace HttpServer.MyServer
             {
                 case "Send start page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start page 4.html";
+                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start page.html";
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         Version + " " + HttpStatusCode.OK + "\r\n" +
@@ -91,6 +96,37 @@ namespace HttpServer.MyServer
                         "Content-Length: " + bodyArray.Length + "\r\n" +
                            "\r\n");
                         responseArray = MakeArray(sbHeader, bodyArray);
+                        break;
+
+                    }
+
+                case "Send file":
+                    {
+                        string filePath = Environment.CurrentDirectory + StoragePath + @"\" + $@"{request.Parameters["nameOfFileInStartLine"]}";
+                        if (File.Exists(filePath))
+                        {
+                            Byte[] bodyArray = File.ReadAllBytes(filePath);
+                            sbHeader.AppendLine(
+                            Version + " " + HttpStatusCode.OK + "\r\n" +
+                            "Server: " + ServerName + "\r\n" +
+                            "Content-Type: " + "multipart/form-data" + "\r\n" +
+                            "Content-Length: " + bodyArray.Length + "\r\n" +
+                               "\r\n");
+                            responseArray = MakeArray(sbHeader, bodyArray);
+                        }
+                        else
+                        {
+                            filePath = Environment.CurrentDirectory + WebPath + @"\" + @"404.html";
+                            Byte[] bodyArray = File.ReadAllBytes(filePath);
+                            sbHeader.AppendLine(
+                            Version + " " + HttpStatusCode.NotFound + "\r\n" +
+                            "Server: " + ServerName + "\r\n" +
+                            "Content-Type: " + "text/html" + "\r\n" +
+                            "Content-Length: " + bodyArray.Length +
+                               "\r\n");
+
+                            responseArray = MakeArray(sbHeader, bodyArray);
+                        }
                         break;
 
                     }
@@ -127,7 +163,7 @@ namespace HttpServer.MyServer
 
                 case "Send check page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start Simulation Page 3.html";
+                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start Simulation Page.html";
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         Version + " " + HttpStatusCode.OK + "\r\n" +
@@ -142,7 +178,7 @@ namespace HttpServer.MyServer
 
                 case "Send upload page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Upload page 3.html";
+                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Upload page.html";
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         Version + " " + HttpStatusCode.OK + "\r\n" +
