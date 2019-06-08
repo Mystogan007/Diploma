@@ -30,7 +30,7 @@ namespace HttpServer.MyServer
 
         public string HandleRequest()
         {
-            if (request == null | request.HasError)
+            if (request == null)
                 return "Send bad request";
 
             else if (request.Method == HttpMethod.GET)
@@ -130,21 +130,7 @@ namespace HttpServer.MyServer
                         break;
 
                     }
-
-                case "Send favicon.ico":
-                    {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"favicon.ico";
-                        Byte[] bodyArray = File.ReadAllBytes(filePath);
-                        sbHeader.AppendLine(
-                        Version + " " + HttpStatusCode.OK + "\r\n" +
-                        "Server: " + ServerName + "\r\n" +
-                        "Content-Type: " + "text/html" + "\r\n" +
-                        "Content-Length: " + bodyArray.Length + "\r\n" +
-                           "\r\n");
-                        responseArray = MakeArray(sbHeader, bodyArray);
-                        break;
-
-                    }
+       
 
                 case "Send bad request":
                     {
