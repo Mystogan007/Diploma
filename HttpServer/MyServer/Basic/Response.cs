@@ -34,17 +34,17 @@ namespace HttpServer.MyServer
                 return "Send bad request";
 
             else if (request.Method == HttpMethod.GET)
-                return GetHandleGetResult();
+                return HandleGetRequest();
 
 
             else if (request.Method == HttpMethod.POST)
-                return GetHandlePostResult();
+                return HandlePostRequest();
 
             else
                 return "Send bad request";
         }
 
-        private string GetHandleGetResult()
+        private string HandleGetRequest()
         {
 
             if (request.Parameters["nameOfFileInStartLine"] == string.Empty)
@@ -54,7 +54,7 @@ namespace HttpServer.MyServer
                 return "Send file";
         }
 
-        private string GetHandlePostResult()
+        private string HandlePostRequest()
         {
             if (request.Parameters.ContainsKey("action"))
                 switch (request.Parameters["action"])
