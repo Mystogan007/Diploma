@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HttpServer.MyServer.Support
+namespace HttpServer.MyServer
 {
     /// <summary>
     /// HTTP-метод запроса.

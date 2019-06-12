@@ -14,16 +14,10 @@ using HttpServer.MyServer;
 
 namespace HttpServer
 {
-    public class HttpServer
-    {
-
-        
-        
-
-        private bool isRunning = false;
+    public class HttpServer    {
+   
 
         private TcpListener listener;
-
         public HttpServer(int port)
         {
             listener = new TcpListener(IPAddress.Any, port);           
@@ -32,11 +26,10 @@ namespace HttpServer
         }
 
         public void Start()
-        {
-            isRunning = true;
+        {          
             listener.Start();
 
-            while (isRunning)
+            while (true)
             {                
                 if (listener.Pending())
                 {
@@ -53,8 +46,8 @@ namespace HttpServer
                     #endregion
                 }
                 Thread.Sleep(1000);
-            }        
-            listener.Stop(); 
+            }       
+           
         }
                
 
@@ -68,18 +61,12 @@ namespace HttpServer
 
             if (requestArray.Length != 0)
             {
-                Request request = new Request(requestArray);
-                request.LoadRequest();
-                request = request.HasError == true ? null : request;
-                Response response = new Response(request);
-                response.MakeResponse(response.HandleRequest());
-                myClient.Send(response.responseArray, response.responseArray.Length, SocketFlags.None);
+                byte[] responseArray = Handler.GetRequestFromArrayAndReturnResponse(requestArray);
+                myClient.Send(responseArray, responseArray.Length, SocketFlags.None);
             }
             myClient.Dispose();
             myClient.Close();
         }
-
-
 
         public static byte[] ReadToEnd(Socket mySocket)
         {
