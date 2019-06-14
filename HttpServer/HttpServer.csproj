@@ -25,4 +25,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy &quot;$(SolutionDir)HttpServer\web&quot; &quot;$(SolutionDir)HttpServer\bin\$(Configuration)\netcoreapp2.1\root\web\&quot; /s /e" />
+  </Target>
+
 </Project>

@@ -1,0 +1,20 @@
+https://habr.com/ru/post/423035/
+http://ÿזןנמדנאללטסע.נפ/blog/otpravka-faylov-cherez-ajax/
+http://qaru.site/questions/394/how-can-i-know-which-radio-button-is-selected-via-jquery
+
+
+Client is connected!
+POST /127.0.0.1:8080 HTTP/1.1
+Host: 127.0.0.1:8080
+Connection: keep-alive
+Content-Length: 19
+Accept: */*
+Origin: http://127.0.0.1:8080
+X-Requested-With: XMLHttpRequest
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 YaBrowser/19.4.2.702 Yowser/2.5 Safari/537.36
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+Referer: http://127.0.0.1:8080/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: ru,en;q=0.9
+
+name=123&comment=25
