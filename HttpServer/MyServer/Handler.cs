@@ -45,7 +45,7 @@ namespace HttpServer.MyServer
         }
 
 
-        protected class Bytereader
+        protected class ByteReader
         {
             public readonly string NewLine = "\r\n";
 
