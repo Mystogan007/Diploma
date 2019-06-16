@@ -58,7 +58,7 @@ namespace HttpServer.MyServer
             public byte[] requestArray;
 
 
-            public Bytereader(byte[] requestArray)
+            public ByteReader(byte[] requestArray)
             {
                 this.requestArray = requestArray;
                 lineBuffer = new byte[InitialLineSize];
@@ -123,15 +123,15 @@ namespace HttpServer.MyServer
 
         private static Request GetRequest(byte[] requestArray)
         {
-            Bytereader bytereader = new Bytereader(requestArray);
+            ByteReader ByteReader = new ByteReader(requestArray);
             Request request = new Request();
             request.isBadRequest = false;
 
-            ReceiveStartingLine(bytereader, request);
+            ReceiveStartingLine(ByteReader, request);
             if (request.isBadRequest)
                 return request;
 
-            ReceiveHeaders(bytereader, request);
+            ReceiveHeaders(ByteReader, request);
             if (request.isBadRequest)
                 return request;
 
@@ -142,27 +142,27 @@ namespace HttpServer.MyServer
 
             if (request.Method == HttpMethod.POST)
             {
-                ParseBody(bytereader, request);
+                ParseBody(ByteReader, request);
             }
             return request;
         }
 
-        private static void ParseBody(Bytereader bytereader, Request request)
+        private static void ParseBody(ByteReader ByteReader, Request request)
         {
             if (request.Boundaries.ContainsKey("boundary"))
             {
-                List<Tuple<int, int>> parts = GetNumberAndIndexPartsOfBody(bytereader, request);
+                List<Tuple<int, int>> parts = GetNumberAndIndexPartsOfBody(ByteReader, request);
                 foreach (var part in parts)
                 {
                     try
                     {
-                        Tuple<int, int> specifiedPart = CheckBodyHeaders(part, bytereader, request);
+                        Tuple<int, int> specifiedPart = CheckBodyHeaders(part, ByteReader, request);
                         if (request.Parameters.ContainsKey("nameOfFileInBody"))
                         {
-                            request.Parameters["nameOfModel"] = GetEntryPointToLoadModel(ReceivePartOfBodyBytes(specifiedPart, bytereader));
+                            request.Parameters["nameOfModel"] = GetEntryPointToLoadModel(ReceivePartOfBodyBytes(specifiedPart, ByteReader));
                         }
                         else
-                            GetParameters(specifiedPart, request, bytereader);
+                            GetParameters(specifiedPart, request, ByteReader);
                     }
                     catch
                     {
@@ -178,7 +178,7 @@ namespace HttpServer.MyServer
             }
         }
 
-        static private List<Tuple<int, int>> GetNumberAndIndexPartsOfBody(Bytereader bytereader, Request request)
+        static private List<Tuple<int, int>> GetNumberAndIndexPartsOfBody(ByteReader ByteReader, Request request)
         {
             int start = 0;
             int finish = 0;
@@ -186,11 +186,11 @@ namespace HttpServer.MyServer
             List<int> temp = new List<int>();
             List<Tuple<int, int>> parts = new List<Tuple<int, int>>();
 
-            foreach (var position in BytesChecker.Locate(bytereader.requestArray, request.Boundaries["boundary"]))
+            foreach (var position in BytesChecker.Locate(ByteReader.requestArray, request.Boundaries["boundary"]))
             {
                 temp.Add(position);
             }
-            foreach (var position in BytesChecker.Locate(bytereader.requestArray, request.Boundaries["finishBoundary"]))
+            foreach (var position in BytesChecker.Locate(ByteReader.requestArray, request.Boundaries["finishBoundary"]))
             {
                 temp.Add(position);
             }
@@ -223,19 +223,19 @@ namespace HttpServer.MyServer
             return parts;
         }
 
-        static private Tuple<int, int> CheckBodyHeaders(Tuple<int, int> part, Bytereader bytereader, Request request)
+        static private Tuple<int, int> CheckBodyHeaders(Tuple<int, int> part, ByteReader ByteReader, Request request)
         {
-            bytereader.position = part.Item1 + request.Boundaries["boundary"].Length;
+            ByteReader.position = part.Item1 + request.Boundaries["boundary"].Length;
 
-            while (bytereader.position != part.Item2)
+            while (ByteReader.position != part.Item2)
             {
 
-                string line = ReadLine(bytereader);
+                string line = ReadLine(ByteReader);
 
                 // Если достигнут конец заголовков тела.
-                if (line == bytereader.NewLine)
+                if (line == ByteReader.NewLine)
                 {
-                    Tuple<int, int> specifiedPart = new Tuple<int, int>(bytereader.position, part.Item2);
+                    Tuple<int, int> specifiedPart = new Tuple<int, int>(ByteReader.position, part.Item2);
                     return specifiedPart;
                 }
                 // Ищем имя файла в заголовках тела.
@@ -257,9 +257,9 @@ namespace HttpServer.MyServer
             return null;
         }
 
-        static private void GetParameters(Tuple<int, int> specifiedPart, Request request, Bytereader bytereader)
+        static private void GetParameters(Tuple<int, int> specifiedPart, Request request, ByteReader ByteReader)
         {
-            byte[] source = ReceivePartOfBodyBytes(specifiedPart, bytereader);
+            byte[] source = ReceivePartOfBodyBytes(specifiedPart, ByteReader);
             string line = Encoding.UTF8.GetString(source);
             if (request.Parameters.ContainsKey("action"))
             {
@@ -277,13 +277,13 @@ namespace HttpServer.MyServer
                 request.Parameters["model"] = line;
         }
 
-        static private byte[] ReceivePartOfBodyBytes(Tuple<int, int> specifiedPart, Bytereader bytereader)
+        static private byte[] ReceivePartOfBodyBytes(Tuple<int, int> specifiedPart, ByteReader ByteReader)
         {
             int startIndex = specifiedPart.Item1;
             int finishIndex = specifiedPart.Item2;
             int length = finishIndex - startIndex;
             byte[] temp = new byte[length];
-            Array.Copy(bytereader.requestArray, startIndex, temp, 0, length);
+            Array.Copy(ByteReader.requestArray, startIndex, temp, 0, length);
             return temp;
         }
 
@@ -295,14 +295,14 @@ namespace HttpServer.MyServer
             request.Boundaries["finishBoundary"] = Encoding.ASCII.GetBytes("--" + name.Groups["boundary"].Value + "--\r\n");
         }
 
-        private static void ReceiveHeaders(Bytereader bytereader, Request request)
+        private static void ReceiveHeaders(ByteReader ByteReader, Request request)
         {
             while (true)
             {
-                string header = ReadLine(bytereader);
+                string header = ReadLine(ByteReader);
 
                 // Если достигнут конец заголовков.
-                if (header == bytereader.NewLine)
+                if (header == ByteReader.NewLine)
                     return;
 
                 // Ищем позицию между именем и значением заголовка.
@@ -322,7 +322,7 @@ namespace HttpServer.MyServer
             }
         }
 
-        static private string ReadLine(Bytereader bytereader)
+        static private string ReadLine(ByteReader ByteReader)
         {
             int linePosition = 0;
 
@@ -330,8 +330,8 @@ namespace HttpServer.MyServer
             {
                 byte b;
 
-                b = bytereader.requestArray[bytereader.position++];
-                bytereader.lineBuffer[linePosition++] = b;
+                b = ByteReader.requestArray[ByteReader.position++];
+                ByteReader.lineBuffer[linePosition++] = b;
 
                 // Если считан символ '\n'.
                 if (b == 10)
@@ -340,34 +340,34 @@ namespace HttpServer.MyServer
                 }
 
                 // Если достигнут максимальный предел размера буфера линии.
-                if (linePosition == bytereader.lineBuffer.Length)
+                if (linePosition == ByteReader.lineBuffer.Length)
                 {
                     // Увеличиваем размер буфера линии в два раза.
-                    byte[] newLineBuffer = new byte[bytereader.lineBuffer.Length * 2];
+                    byte[] newLineBuffer = new byte[ByteReader.lineBuffer.Length * 2];
 
-                    bytereader.lineBuffer.CopyTo(newLineBuffer, 0);
-                    bytereader.lineBuffer = newLineBuffer;
+                    ByteReader.lineBuffer.CopyTo(newLineBuffer, 0);
+                    ByteReader.lineBuffer = newLineBuffer;
                 }
             }
 
 
-            return Encoding.ASCII.GetString(bytereader.lineBuffer, 0, linePosition);
+            return Encoding.ASCII.GetString(ByteReader.lineBuffer, 0, linePosition);
         }
 
-        static private void ReceiveStartingLine(Bytereader bytereader, Request request)
+        static private void ReceiveStartingLine(ByteReader ByteReader, Request request)
         {
             string startingLine;
 
             while (true)
             {
-                startingLine = ReadLine(bytereader);
+                startingLine = ReadLine(ByteReader);
 
                 if (startingLine.Length == 0)
                 {
                     request.isBadRequest = true;
                     break;
                 }
-                else if (startingLine == bytereader.NewLine)
+                else if (startingLine == ByteReader.NewLine)
                 {
                     continue;
                 }
