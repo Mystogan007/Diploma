@@ -147,22 +147,22 @@ namespace HttpServer.MyServer
             return request;
         }
 
-        private static void ParseBody(ByteReader ByteReader, Request request)
+        private static void ParseBody(ByteReader byteReader, Request request)
         {
             if (request.Boundaries.ContainsKey("boundary"))
             {
-                List<Tuple<int, int>> parts = GetNumberAndIndexPartsOfBody(ByteReader, request);
+                List<Tuple<int, int>> parts = GetNumberAndIndexPartsOfBody(byteReader, request);
                 foreach (var part in parts)
                 {
                     try
                     {
-                        Tuple<int, int> specifiedPart = CheckBodyHeaders(part, ByteReader, request);
+                        Tuple<int, int> specifiedPart = CheckBodyHeaders(part, byteReader, request);
                         if (request.Parameters.ContainsKey("nameOfFileInBody"))
                         {
-                            request.Parameters["nameOfModel"] = GetEntryPointToLoadModel(ReceivePartOfBodyBytes(specifiedPart, ByteReader));
+                            request.Parameters["nameOfModel"] = GetEntryPointToLoadModel(ReceivePartOfBodyBytes(specifiedPart, byteReader));
                         }
                         else
-                            GetParameters(specifiedPart, request, ByteReader);
+                            GetParameters(specifiedPart, request, byteReader);
                     }
                     catch
                     {
@@ -173,6 +173,10 @@ namespace HttpServer.MyServer
                 if (request.Parameters.ContainsKey("subject") && request.Parameters.ContainsKey("model"))
                 {
                     request.Parameters["nameOfProcess"] = GetEntryPointToStartModeling(request.Parameters);
+                }
+                if(request.Parameters.ContainsKey("process"))
+                {
+                    request.Parameters["process"] = GetEntryPointToCheckStatus(request);
                 }
 
             }
@@ -274,7 +278,14 @@ namespace HttpServer.MyServer
             }
 
             if (request.Parameters.ContainsKey("model") && request.Parameters["model"] == string.Empty)
+            {
                 request.Parameters["model"] = line;
+                return;
+            }
+                
+
+            if (request.Parameters.ContainsKey("process"))
+                request.Parameters["process"] = line;
         }
 
         static private byte[] ReceivePartOfBodyBytes(Tuple<int, int> specifiedPart, ByteReader ByteReader)
@@ -455,6 +466,10 @@ namespace HttpServer.MyServer
             else if (request.Parameters.ContainsKey("resultSimulation"))
                 return "Send result of simulation";
 
+            else if (request.Parameters.ContainsKey("nameOfProcess"))
+                return "Send name of process";
+
+
             else if (request.Parameters.ContainsKey("process"))
                 return "Send status of simulation";
 
@@ -533,7 +548,7 @@ namespace HttpServer.MyServer
 
                 case "Send check page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start Simulation Page.html";
+                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start modeling page.html";
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -613,6 +628,19 @@ namespace HttpServer.MyServer
                         "Content-Length: " + bodyArray.Length +
                            "\r\n");
                       return  responseArray = MakeArray(sbHeader, bodyArray);                       
+                    }
+
+                case "Send name of process":
+                    {
+                        byte[] bodyArray = Encoding.UTF8.GetBytes("Modeling started. Name of process is " + request.Parameters["nameOfProcess"]);
+                        sbHeader.AppendLine(
+                        version + " " + HttpStatusCode.OK + "\r\n" +
+                        "Server: " + serverName + "\r\n" +
+                        "Content-Type: " + "text/html" + "\r\n" +
+                        "Content-Length: " + bodyArray.Length +
+                           "\r\n");
+                        return responseArray = MakeArray(sbHeader, bodyArray);
+
                     }
 
                 default:
@@ -713,16 +741,6 @@ namespace HttpServer.MyServer
                 Marshal.FreeHGlobal(in_params);
                 byte[] temp = new byte[out_byte_count];
                 Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
-                //   Marshal.FreeHGlobal(out_params);
-                string status;
-                do
-                {
-                    Thread.Sleep(60000);
-                    
-                    status = GetEntryPointToCheckStatus(temp);
-                }
-                while (status == "1");
-
                 return Encoding.UTF8.GetString(temp);
             }
             else
@@ -735,14 +753,14 @@ namespace HttpServer.MyServer
 
         }
 
-        public static string GetEntryPointToCheckStatus(byte [] nameOfProcess)
+        private static string GetEntryPointToCheckStatus(Request  request)
         {
-           
-            byte[] nameOfModelLength = BitConverter.GetBytes(nameOfProcess.Length);
-            byte[] requestLine = new byte[nameOfModelLength.Length + nameOfProcess.Length];
+            byte[] nameOfProcess = Encoding.UTF8.GetBytes(request.Parameters["process"]);
+            byte[] nameOfProcessLength = BitConverter.GetBytes(nameOfProcess.Length);
+            byte[] requestLine = new byte[nameOfProcessLength.Length + nameOfProcess.Length];
 
             int k = 0;
-            foreach (byte i in nameOfModelLength)
+            foreach (byte i in nameOfProcessLength)
             {
                 requestLine[k] = i;
                 k++;
@@ -763,11 +781,17 @@ namespace HttpServer.MyServer
             {
                 Marshal.FreeHGlobal(in_params);
                 byte[] temp = new byte[out_byte_count];
-                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
-                
+                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);               
 
                 Console.WriteLine(Encoding.Default.GetString(temp));
-                return temp[0].ToString();
+                if (temp[0].ToString() == "0")
+                    return "Процесс с заданным именем не существует";
+                else if (temp[0].ToString() == "1")
+                    return "Процесс выполняется";
+                else if (temp[0].ToString() == "2")
+                    return "Процесс завершен и ожидает закрытия";
+                else
+                return "Unknown error";
             }
             else
             {
