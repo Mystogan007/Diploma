@@ -174,7 +174,7 @@ namespace HttpServer.MyServer
                 {
                     request.Parameters["nameOfProcess"] = GetEntryPointToStartModeling(request.Parameters);
                 }
-                if(request.Parameters.ContainsKey("process"))
+                if (request.Parameters.ContainsKey("process"))
                 {
                     request.Parameters["process"] = GetEntryPointToCheckStatus(request);
                 }
@@ -282,7 +282,7 @@ namespace HttpServer.MyServer
                 request.Parameters["model"] = line;
                 return;
             }
-                
+
 
             if (request.Parameters.ContainsKey("process"))
                 request.Parameters["process"] = line;
@@ -495,13 +495,16 @@ namespace HttpServer.MyServer
                         "Content-Type: " + "text/html" + "\r\n" +
                         "Content-Length: " + bodyArray.Length + "\r\n" +
                            "\r\n");
-                        return responseArray = MakeArray(sbHeader, bodyArray);                       
+                        return responseArray = MakeArray(sbHeader, bodyArray);
 
                     }
 
                 case "Send file":
                     {
-                        string filePath = Environment.CurrentDirectory + StoragePath + @"\" + $@"{request.Parameters["nameOfFileInStartLine"]}";
+                       // string filePath = Environment.CurrentDirectory + StoragePath + @"\" + $@"{request.Parameters["nameOfFileInStartLine"]}";
+                        string filePath = Environment.CurrentDirectory;
+                        int just = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(just) + "storage\\" + $"{request.Parameters["nameOfFileInStartLine"]}";
                         if (File.Exists(filePath))
                         {
                             Byte[] bodyArray = File.ReadAllBytes(filePath);
@@ -526,7 +529,7 @@ namespace HttpServer.MyServer
 
                             return responseArray = MakeArray(sbHeader, bodyArray);
                         }
-                        
+
 
                     }
 
@@ -543,7 +546,7 @@ namespace HttpServer.MyServer
                            "\r\n");
 
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                        
+
                     }
 
                 case "Send check page":
@@ -558,7 +561,7 @@ namespace HttpServer.MyServer
                            "\r\n");
 
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                      
+
                     }
 
                 case "Send upload page":
@@ -573,7 +576,7 @@ namespace HttpServer.MyServer
                            "\r\n");
 
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                       
+
                     }
 
                 case "Send Check model status page":
@@ -588,7 +591,7 @@ namespace HttpServer.MyServer
                            "\r\n");
 
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                        
+
                     }
 
 
@@ -602,7 +605,7 @@ namespace HttpServer.MyServer
                         "Content-Length: " + bodyArray.Length +
                            "\r\n");
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                        
+
                     }
 
                 case "Send result of simulation":
@@ -615,7 +618,7 @@ namespace HttpServer.MyServer
                         "Content-Length: " + bodyArray.Length +
                            "\r\n");
                         return responseArray = MakeArray(sbHeader, bodyArray);
-                        
+
                     }
 
                 case "Send status of simulation":
@@ -627,7 +630,7 @@ namespace HttpServer.MyServer
                         "Content-Type: " + "text/html" + "\r\n" +
                         "Content-Length: " + bodyArray.Length +
                            "\r\n");
-                      return  responseArray = MakeArray(sbHeader, bodyArray);                       
+                        return responseArray = MakeArray(sbHeader, bodyArray);
                     }
 
                 case "Send name of process":
@@ -657,7 +660,7 @@ namespace HttpServer.MyServer
                         return responseArray = MakeArray(sbHeader, bodyArray);
                     }
             }
-           
+
 
         }
 
@@ -701,8 +704,8 @@ namespace HttpServer.MyServer
 
         public static string GetEntryPointToStartModeling(Dictionary<string, string> options)
         {
-            byte[] subjectArray = Encoding.UTF8.GetBytes(options["subject"]);            
-            byte[] nameOfModel = Encoding.UTF8.GetBytes(options["model"]);             
+            byte[] subjectArray = Encoding.UTF8.GetBytes(options["subject"]);
+            byte[] nameOfModel = Encoding.UTF8.GetBytes(options["model"]);
 
             byte[] requestLine = new byte[subjectArray.Length + 4 + 4 + nameOfModel.Length];
 
@@ -753,7 +756,7 @@ namespace HttpServer.MyServer
 
         }
 
-        private static string GetEntryPointToCheckStatus(Request  request)
+        private static string GetEntryPointToCheckStatus(Request request)
         {
             byte[] nameOfProcess = Encoding.UTF8.GetBytes(request.Parameters["process"]);
             byte[] nameOfProcessLength = BitConverter.GetBytes(nameOfProcess.Length);
@@ -781,7 +784,7 @@ namespace HttpServer.MyServer
             {
                 Marshal.FreeHGlobal(in_params);
                 byte[] temp = new byte[out_byte_count];
-                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);               
+                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
 
                 Console.WriteLine(Encoding.Default.GetString(temp));
                 if (temp[0].ToString() == "0")
@@ -789,9 +792,22 @@ namespace HttpServer.MyServer
                 else if (temp[0].ToString() == "1")
                     return "Процесс выполняется";
                 else if (temp[0].ToString() == "2")
-                    return "Процесс завершен и ожидает закрытия";
+                {
+                    Tuple<byte[], string> result = GetEntryPointToGetResult(request);
+                    if(result.Item1 != null)
+                    {
+                       string status = WriteToFile(result.Item1, request);
+                        if (status != "Failed to write to file")
+                            return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.results";
+                        else
+                            return status;
+                    }
+                    else
+                    return result.Item2;
+                }
+
                 else
-                return "Unknown error";
+                    return "Unknown error";
             }
             else
             {
@@ -801,6 +817,121 @@ namespace HttpServer.MyServer
                 return result;
             }
 
+        }
+
+
+        private static Tuple<byte[], string> GetEntryPointToGetResult(Request request)
+        {
+            byte[] nameOfProcess = Encoding.UTF8.GetBytes(request.Parameters["process"]);
+            byte[] nameOfProcessLength = BitConverter.GetBytes(nameOfProcess.Length);
+            byte[] requestLine = new byte[nameOfProcessLength.Length + nameOfProcess.Length];
+
+            int k = 0;
+            foreach (byte i in nameOfProcessLength)
+            {
+                requestLine[k] = i;
+                k++;
+            }
+            foreach (byte i in nameOfProcess)
+            {
+                requestLine[k] = i;
+                k++;
+            }
+
+            IntPtr in_params = Marshal.AllocHGlobal(requestLine.Length);
+            Marshal.Copy(requestLine, 0, in_params, requestLine.Length);
+            uint out_byte_count;
+            IntPtr out_params;
+            uint a = ControlSystemEntryPoint(5, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);
+
+            if (a == 0)
+            {
+                Marshal.FreeHGlobal(in_params);
+                byte[] result = new byte[out_byte_count];
+                Marshal.Copy(out_params, result, 0, (int)out_byte_count);
+                return new Tuple<byte[], string>(result, null);
+            }
+            else
+            {
+                uint pSize;
+                IntPtr error = ControlSystemGetErrorDescription(a, out pSize);
+                var result = Marshal.PtrToStringUTF8(error);
+                return new Tuple<byte[], string>(null, result);
+            }
+
+        }
+
+        private static string GetEntryPointToCloseProcess(Request request)
+        {
+            byte[] nameOfProcess = Encoding.UTF8.GetBytes(request.Parameters["process"]);
+            byte[] nameOfProcessLength = BitConverter.GetBytes(nameOfProcess.Length);
+            byte[] requestLine = new byte[nameOfProcessLength.Length + nameOfProcess.Length];
+
+            int k = 0;
+            foreach (byte i in nameOfProcessLength)
+            {
+                requestLine[k] = i;
+                k++;
+            }
+            foreach (byte i in nameOfProcess)
+            {
+                requestLine[k] = i;
+                k++;
+            }
+
+            IntPtr in_params = Marshal.AllocHGlobal(requestLine.Length);
+            Marshal.Copy(requestLine, 0, in_params, requestLine.Length);
+            uint out_byte_count;
+            IntPtr out_params;
+            uint a = ControlSystemEntryPoint(4, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);
+
+            if (a == 0)
+            {
+                Marshal.FreeHGlobal(in_params);
+                byte[] temp = new byte[out_byte_count];
+                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
+
+                Console.WriteLine(Encoding.Default.GetString(temp));
+                if (temp[0].ToString() == "0")
+                    return "Процесс с заданным именем не существует";
+                else if (temp[0].ToString() == "1")
+                    return "Процесс выполняется";
+                else if (temp[0].ToString() == "2")
+                    return "Процесс завершен и ожидает закрытия";
+                else
+                    return "Unknown error";
+            }
+            else
+            {
+                uint pSize;
+                IntPtr error = ControlSystemGetErrorDescription(a, out pSize);
+                var result = Marshal.PtrToStringUTF8(error);
+                return result;
+            }
+
+        }
+
+        #endregion
+
+        #region Запись в файл
+     static   private string WriteToFile(byte[] result,Request request)
+        {
+
+            string path = Environment.CurrentDirectory;
+            int just = path.IndexOf("bin");
+            path = path.Remove(just) + "storage\\" + $"{request.Parameters["process"]}.results";
+            try
+            {
+                using (var fileStream = new FileStream(path, FileMode.Create))
+                {                
+                    fileStream.Write(result, 0, result.Length);
+                }
+                return $"{request.Parameters["process"]}.results";
+            }
+            catch
+            {
+                return "Failed to write to file";
+            }
         }
         #endregion
     }
