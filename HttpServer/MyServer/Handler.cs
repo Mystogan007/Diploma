@@ -849,6 +849,7 @@ namespace HttpServer.MyServer
                 Marshal.FreeHGlobal(in_params);
                 byte[] result = new byte[out_byte_count];
                 Marshal.Copy(out_params, result, 0, (int)out_byte_count);
+                GetEntryPointToCloseProcess(request);
                 return new Tuple<byte[], string>(result, null);
             }
             else
@@ -861,7 +862,7 @@ namespace HttpServer.MyServer
 
         }
 
-        private static string GetEntryPointToCloseProcess(Request request)
+        private static void GetEntryPointToCloseProcess(Request request)
         {
             byte[] nameOfProcess = Encoding.UTF8.GetBytes(request.Parameters["process"]);
             byte[] nameOfProcessLength = BitConverter.GetBytes(nameOfProcess.Length);
@@ -883,38 +884,13 @@ namespace HttpServer.MyServer
             Marshal.Copy(requestLine, 0, in_params, requestLine.Length);
             uint out_byte_count;
             IntPtr out_params;
-            uint a = ControlSystemEntryPoint(4, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);
-
-            if (a == 0)
-            {
-                Marshal.FreeHGlobal(in_params);
-                byte[] temp = new byte[out_byte_count];
-                Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
-
-                Console.WriteLine(Encoding.Default.GetString(temp));
-                if (temp[0].ToString() == "0")
-                    return "Процесс с заданным именем не существует";
-                else if (temp[0].ToString() == "1")
-                    return "Процесс выполняется";
-                else if (temp[0].ToString() == "2")
-                    return "Процесс завершен и ожидает закрытия";
-                else
-                    return "Unknown error";
-            }
-            else
-            {
-                uint pSize;
-                IntPtr error = ControlSystemGetErrorDescription(a, out pSize);
-                var result = Marshal.PtrToStringUTF8(error);
-                return result;
-            }
-
-        }
+            uint a = ControlSystemEntryPoint(7, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);       
+                 }
 
         #endregion
 
         #region Запись в файл
-     static   private string WriteToFile(byte[] result,Request request)
+        static   private string WriteToFile(byte[] result,Request request)
         {
 
             string path = Environment.CurrentDirectory;
