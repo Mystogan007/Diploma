@@ -790,7 +790,7 @@ namespace HttpServer.MyServer
                 if (temp[0].ToString() == "0")
                     return "Процесс с заданным именем не существует";
                 else if (temp[0].ToString() == "1")
-                    return "Процесс выполняется";
+                    return $"{DateTime.Now} - процесс выполняется";
                 else if (temp[0].ToString() == "2")
                 {
                     Tuple<byte[], string> result = GetEntryPointToGetResult(request);

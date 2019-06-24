@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!--[if IE 7 ]> <html lang="en" class="ie7"> <![endif]-->
 <!--[if IE 8 ]> <html lang="en" class="ie8"> <![endif]-->
 <!--[if IE 9 ]> <html lang="en" class="ie9"> <![endif]-->
@@ -32,19 +32,30 @@
 		  </div>
 		</p>
 		</form>
+		<div id="progress">    
+    After pushing "Check" status of modeling will update every 20 seconds until modeling finish.
+</div>
+		
+		
 	</body>
 	
 	  <script type="text/javascript">
-    $("form[name='uploader']").submit(function(e) {
+    $("form[name='uploader']").submit(function(e) {         
+        
         var formData = new FormData($(this)[0]);
-
-        $.ajax({
+         var a = 1;	 
+		var myVar = setInterval(function() {
+            $.ajax({
             url: 'file.php',
             type: "POST",
             data: formData,
             async: false,
-            success: function (msg) {
-                alert(msg);
+            success: function (msg) {           
+                
+				a = msg;	
+				if (!a.includes('процесс выполняется')) {
+				clearInterval(myVar);  
+} 
             },
             error: function(msg) {
                 alert('ќшибка!');
@@ -52,9 +63,20 @@
             cache: false,
             contentType: false,
             processData: false
-        });
-        e.preventDefault();
+        });	
+				document.getElementById('progress').innerHTML=a;
+         	
+        }, 20000);
+       return false;	
+		
     });
+	
+
+	
+	
+
+
+	
     </script>
 	
 
