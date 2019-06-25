@@ -453,7 +453,7 @@ namespace HttpServer.MyServer
                 switch (request.Parameters["action"])
                 {
                     case "choose":
-                        return "Send check page";
+                        return "Send start modeling page";
                     case "upload":
                         return "Send upload page";
                     case "check":
@@ -487,7 +487,10 @@ namespace HttpServer.MyServer
             {
                 case "Send start page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start page.html";
+                        string filePath = Environment.CurrentDirectory;
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "web\\" + "Start page.html";
+                        
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -500,11 +503,10 @@ namespace HttpServer.MyServer
                     }
 
                 case "Send file":
-                    {
-                       // string filePath = Environment.CurrentDirectory + StoragePath + @"\" + $@"{request.Parameters["nameOfFileInStartLine"]}";
+                    {                       
                         string filePath = Environment.CurrentDirectory;
-                        int just = filePath.IndexOf("bin");
-                        filePath = filePath.Remove(just) + "storage\\" + $"{request.Parameters["nameOfFileInStartLine"]}";
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "storage\\" + $"{request.Parameters["nameOfFileInStartLine"]}";
                         if (File.Exists(filePath))
                         {
                             Byte[] bodyArray = File.ReadAllBytes(filePath);
@@ -549,9 +551,12 @@ namespace HttpServer.MyServer
 
                     }
 
-                case "Send check page":
+                case "Send start modeling page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Start modeling page.html";
+                        string filePath = Environment.CurrentDirectory;
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "web\\" + "Start modeling page.html";
+
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -566,7 +571,10 @@ namespace HttpServer.MyServer
 
                 case "Send upload page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Upload page.html";
+                        string filePath = Environment.CurrentDirectory;
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "web\\" + "Upload page.html";
+                        
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -581,7 +589,10 @@ namespace HttpServer.MyServer
 
                 case "Send Check model status page":
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"Check model status page.html";
+                        string filePath = Environment.CurrentDirectory;
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "web\\" + "Check model status page.html";
+                       
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -648,7 +659,10 @@ namespace HttpServer.MyServer
 
                 default:
                     {
-                        string filePath = Environment.CurrentDirectory + WebPath + @"\" + @"404.html";
+                        string filePath = Environment.CurrentDirectory;
+                        int index = filePath.IndexOf("bin");
+                        filePath = filePath.Remove(index) + "web\\" + "404.html";
+                       
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                        version + " " + HttpStatusCode.NotFound + "\r\n" +
