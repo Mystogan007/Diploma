@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!--[if IE 7 ]> <html lang="en" class="ie7"> <![endif]-->
 <!--[if IE 8 ]> <html lang="en" class="ie8"> <![endif]-->
 <!--[if IE 9 ]> <html lang="en" class="ie9"> <![endif]-->
@@ -42,6 +42,7 @@
 	  <script type="text/javascript">
     $("form[name='uploader']").submit(function(e) {         
         
+        document.getElementById('progress').innerHTML='Подождите...';
         var formData = new FormData($(this)[0]);
          var a = 1;	 
 		var myVar = setInterval(function() {
@@ -50,15 +51,16 @@
             type: "POST",
             data: formData,
             async: false,
-            success: function (msg) {           
-                
-				a = msg;	
-				if (!a.includes('процесс выполняется')) {
-				clearInterval(myVar);  
-} 
+            success: function (msg) {
+                a = msg;
+                if (!a.includes('процесс выполняется')) {
+                    if (a.includes('.results'))
+                        a = "<a href=http://" + msg + ">Результат</a>";
+				    clearInterval(myVar);  
+                } 
             },
             error: function(msg) {
-                alert('ќшибка!');
+                alert('ошибка!');
             },
             cache: false,
             contentType: false,
@@ -66,7 +68,7 @@
         });	
 				document.getElementById('progress').innerHTML=a;
          	
-        }, 20000);
+        }, 5000);
        return false;	
 		
     });

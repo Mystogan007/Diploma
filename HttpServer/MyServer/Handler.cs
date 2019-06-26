@@ -1,6 +1,7 @@
 ﻿using HttpServer.MyServer.Support;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -758,7 +759,9 @@ namespace HttpServer.MyServer
                 Marshal.FreeHGlobal(in_params);
                 byte[] temp = new byte[out_byte_count];
                 Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
-                return Encoding.UTF8.GetString(temp);
+                string process = Encoding.UTF8.GetString(temp);                
+                ProcessKeeper.WriteNewProcess(new Tuple<string, string>(process, options["subject"]));
+                return process;
             }
             else
             {
@@ -811,10 +814,17 @@ namespace HttpServer.MyServer
                     if(result.Item1 != null)
                     {
                        string status = WriteToFile(result.Item1, request);
-                        if (status != "Failed to write to file")
-                            return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.results";
-                        else
+
+                        if (status == "Failed to write to file")                       
                             return status;
+
+                        if (ProcessKeeper.GetSubjectAreaOfProcess(request.Parameters["process"]) == "radio_hf")
+                            GetBmp(request.Parameters["process"]);
+
+                        return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.results";
+
+
+
                     }
                     else
                     return result.Item2;
@@ -922,6 +932,32 @@ namespace HttpServer.MyServer
             {
                 return "Failed to write to file";
             }
+        }
+        #endregion
+
+
+        #region visualisation
+        private static void GetBmp(string resultName)
+        {
+            resultName = resultName + ".results";
+            ProcessStartInfo psi = new ProcessStartInfo();
+            string pathToExe = Environment.CurrentDirectory;
+            int index = pathToExe.IndexOf("bin");
+            pathToExe = pathToExe.Remove(index) + "visualisationComponents\\" + "radio_hf_vis.exe";
+            string pathToResult = Environment.CurrentDirectory;
+            pathToResult = pathToResult.Remove(index) + "pathToResult\\" + $"{resultName}";
+
+            //Имя запускаемого приложения
+            psi.FileName = "cmd";
+            //команда, которую надо выполнить
+            psi.Arguments = $@"/c start """" ""{pathToExe}"" {pathToResult}";
+            //  /c - после выполнения команды консоль закроется
+            //  /к - не закрывать консоль после выполнения команды
+            psi.WindowStyle = ProcessWindowStyle.Hidden;
+            psi.RedirectStandardOutput = true;
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            Process.Start(psi);
         }
         #endregion
     }
