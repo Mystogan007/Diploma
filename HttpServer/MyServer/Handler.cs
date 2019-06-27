@@ -516,7 +516,7 @@ namespace HttpServer.MyServer
                             sbHeader.AppendLine(
                             version + " " + HttpStatusCode.OK + "\r\n" +
                             "Server: " + serverName + "\r\n" +
-                            "Content-Type: " + "image/jpeg" + "\r\n" +
+                            "Content-Type: " + "multipart/form-data" + "\r\n" +
                             "Content-Length: " + bodyArray.Length + "\r\n" +
                                "\r\n");
                             return responseArray = MakeArray(sbHeader, bodyArray);
