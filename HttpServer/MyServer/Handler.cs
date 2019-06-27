@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -491,7 +492,7 @@ namespace HttpServer.MyServer
                         string filePath = Environment.CurrentDirectory;
                         int index = filePath.IndexOf("bin");
                         filePath = filePath.Remove(index) + "web\\" + "Start page.html";
-                        
+
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -504,17 +505,18 @@ namespace HttpServer.MyServer
                     }
 
                 case "Send file":
-                    {                       
+                    {
                         string filePath = Environment.CurrentDirectory;
-                        int index = filePath.IndexOf("bin");
+                        int index = filePath.IndexOf("bin");                       
                         filePath = filePath.Remove(index) + "storage\\" + $"{request.Parameters["nameOfFileInStartLine"]}";
+
                         if (File.Exists(filePath))
                         {
                             Byte[] bodyArray = File.ReadAllBytes(filePath);
                             sbHeader.AppendLine(
                             version + " " + HttpStatusCode.OK + "\r\n" +
                             "Server: " + serverName + "\r\n" +
-                            "Content-Type: " + "multipart/form-data" + "\r\n" +
+                            "Content-Type: " + "image/jpeg" + "\r\n" +
                             "Content-Length: " + bodyArray.Length + "\r\n" +
                                "\r\n");
                             return responseArray = MakeArray(sbHeader, bodyArray);
@@ -575,7 +577,7 @@ namespace HttpServer.MyServer
                         string filePath = Environment.CurrentDirectory;
                         int index = filePath.IndexOf("bin");
                         filePath = filePath.Remove(index) + "web\\" + "Upload page.html";
-                        
+
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -593,7 +595,7 @@ namespace HttpServer.MyServer
                         string filePath = Environment.CurrentDirectory;
                         int index = filePath.IndexOf("bin");
                         filePath = filePath.Remove(index) + "web\\" + "Check model status page.html";
-                       
+
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                         version + " " + HttpStatusCode.OK + "\r\n" +
@@ -663,7 +665,7 @@ namespace HttpServer.MyServer
                         string filePath = Environment.CurrentDirectory;
                         int index = filePath.IndexOf("bin");
                         filePath = filePath.Remove(index) + "web\\" + "404.html";
-                       
+
                         Byte[] bodyArray = File.ReadAllBytes(filePath);
                         sbHeader.AppendLine(
                        version + " " + HttpStatusCode.NotFound + "\r\n" +
@@ -759,7 +761,7 @@ namespace HttpServer.MyServer
                 Marshal.FreeHGlobal(in_params);
                 byte[] temp = new byte[out_byte_count];
                 Marshal.Copy(out_params, temp, 0, (int)out_byte_count);
-                string process = Encoding.UTF8.GetString(temp);                
+                string process = Encoding.UTF8.GetString(temp);
                 ProcessKeeper.WriteNewProcess(new Tuple<string, string>(process, options["subject"]));
                 return process;
             }
@@ -811,23 +813,23 @@ namespace HttpServer.MyServer
                 else if (temp[0].ToString() == "2")
                 {
                     Tuple<byte[], string> result = GetEntryPointToGetResult(request);
-                    if(result.Item1 != null)
+                    if (result.Item1 != null)
                     {
-                       string status = WriteToFile(result.Item1, request);
+                        string status = WriteToFile(result.Item1, request);
 
-                        if (status == "Failed to write to file")                       
+                        if (status == "Failed to write to file")
                             return status;
 
                         if (ProcessKeeper.GetSubjectAreaOfProcess(request.Parameters["process"]) == "radio_hf")
-                            GetBmp(request.Parameters["process"]);
-
-                        return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.results";
-
-
-
+                        {
+                            GetImage(request.Parameters["process"]);
+                            return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.resultsbmp";
+                        }
+                        else
+                            return request.Headers["Host"] + "/" + $"{request.Parameters["process"]}.results";
                     }
                     else
-                    return result.Item2;
+                        return result.Item2;
                 }
 
                 else
@@ -908,13 +910,13 @@ namespace HttpServer.MyServer
             Marshal.Copy(requestLine, 0, in_params, requestLine.Length);
             uint out_byte_count;
             IntPtr out_params;
-            uint a = ControlSystemEntryPoint(7, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);       
-                 }
+            uint a = ControlSystemEntryPoint(7, in_params, (uint)requestLine.Length, out out_params, out out_byte_count);
+        }
 
         #endregion
 
         #region Запись в файл
-        static   private string WriteToFile(byte[] result,Request request)
+        static private string WriteToFile(byte[] result, Request request)
         {
 
             string path = Environment.CurrentDirectory;
@@ -923,7 +925,7 @@ namespace HttpServer.MyServer
             try
             {
                 using (var fileStream = new FileStream(path, FileMode.Create))
-                {                
+                {
                     fileStream.Write(result, 0, result.Length);
                 }
                 return $"{request.Parameters["process"]}.results";
@@ -937,7 +939,7 @@ namespace HttpServer.MyServer
 
 
         #region visualisation
-        private static void GetBmp(string resultName)
+        private static void GetImage(string resultName)
         {
             resultName = resultName + ".results";
             ProcessStartInfo psi = new ProcessStartInfo();
@@ -945,7 +947,7 @@ namespace HttpServer.MyServer
             int index = pathToExe.IndexOf("bin");
             pathToExe = pathToExe.Remove(index) + "visualisationComponents\\" + "radio_hf_vis.exe";
             string pathToResult = Environment.CurrentDirectory;
-            pathToResult = pathToResult.Remove(index) + "pathToResult\\" + $"{resultName}";
+            pathToResult = pathToResult.Remove(index) + "storage\\" + $"{resultName}";
 
             //Имя запускаемого приложения
             psi.FileName = "cmd";
@@ -958,6 +960,12 @@ namespace HttpServer.MyServer
             psi.UseShellExecute = false;
             psi.CreateNoWindow = true;
             Process.Start(psi);
+            if (File.Exists(pathToResult + ".bmp"))
+            {
+                Bitmap img = new Bitmap(pathToResult + ".bmp");
+                img.Save(pathToResult + ".jpg");
+            }
+
         }
         #endregion
     }

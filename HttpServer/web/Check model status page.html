@@ -32,11 +32,17 @@
 		  </div>
 		</p>
 		</form>
-		<div id="progress">    
-    After pushing "Check" status of modeling will update every 20 seconds until modeling finish.
-</div>
+		<div id="progress"> 
 		
-		
+        </div>
+
+	<a href="" id='resultLink'></a>	
+	<div > 
+		<a href="" id='pictureLink'></a>
+        </div>
+			<div > 
+		<img src="" id='img' alt="" height="500" width="500">
+        </div>
 	</body>
 	
 	  <script type="text/javascript">
@@ -44,7 +50,10 @@
         
         document.getElementById('progress').innerHTML='Подождите...';
         var formData = new FormData($(this)[0]);
-         var a = 1;	 
+         var a = 1;
+		 var aHref = 1;        
+         var bHref = 1;
+         var source = 1;		 
 		var myVar = setInterval(function() {
             $.ajax({
             url: 'file.php',
@@ -52,12 +61,45 @@
             data: formData,
             async: false,
             success: function (msg) {
-                a = msg;
-                if (!a.includes('процесс выполняется')) {
-                    if (a.includes('.results'))
-                        a = "<a href=http://" + msg + ">Результат</a>";
+		          a = msg;
+                if (!msg.includes('процесс выполняется')) {
+                    if (msg.includes('.resultsbmp')){
+					document.getElementById('progress').innerHTML='';
+					
+					aHref = 'http://' + msg.replace('bmp','');
+					bHref = 'http://' + msg.replace('bmp','.bmp');
+					
+					source = msg.replace('bmp','.jpg');
+					var index = source.indexOf('80/') + 3;					
+					source = source.substring(index);
+					
+					document.getElementById('resultLink').setAttribute("href",aHref);
+					document.getElementById('resultLink').innerHTML = 'Результаты моделирования';
+					
+					document.getElementById('pictureLink').setAttribute("href",bHref);
+					document.getElementById('pictureLink').innerHTML = 'Визуализация';	
+					
+					document.getElementById('img').setAttribute("src",source);
+					document.getElementById('img').setAttribute("alt",'Визуализация');	
+					
+						}
+				   else if (msg.includes('.results')) {
+				       document.getElementById('progress').innerHTML='';
+                       aHref = 'http://' + msg;
+					   document.getElementById('resultLink').setAttribute("href",aHref);
+					   document.getElementById('resultLink').innerHTML = 'Результаты моделирования';
+						}
+						else {
+						document.getElementById('progress').innerHTML=a;
+						}
+						
 				    clearInterval(myVar);  
-                } 
+                }               				
+				else  {
+			
+				document.getElementById('progress').innerHTML=a;
+				}
+				
             },
             error: function(msg) {
                 alert('ошибка!');
@@ -66,8 +108,10 @@
             contentType: false,
             processData: false
         });	
-				document.getElementById('progress').innerHTML=a;
-         	
+
+					
+	
+         	    
         }, 5000);
        return false;	
 		
