@@ -517,7 +517,7 @@ namespace HttpServer.MyServer
                             version + " " + HttpStatusCode.OK + "\r\n" +
                             "Server: " + serverName + "\r\n" +
                             "Content-Type: " + "multipart/form-data" + "\r\n" +
-                            "Content-Length: " + bodyArray.Length + "\r\n" +
+                            "Content-Length: " + bodyArray.Length + 
                                "\r\n");
                             return responseArray = MakeArray(sbHeader, bodyArray);
                         }
@@ -960,6 +960,8 @@ namespace HttpServer.MyServer
             psi.UseShellExecute = false;
             psi.CreateNoWindow = true;
             Process.Start(psi);
+            Thread.Sleep(3000);
+
             if (File.Exists(pathToResult + ".bmp"))
             {
                 Bitmap img = new Bitmap(pathToResult + ".bmp");

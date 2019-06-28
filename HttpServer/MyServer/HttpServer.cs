@@ -57,7 +57,7 @@ namespace HttpServer
             Socket myClient = (Socket)arg;
             byte[] requestArray = ReadToEnd(myClient);
 
-           Console.WriteLine(Encoding.ASCII.GetString(requestArray));  //тестовая строка для просмотра запросов            
+         //  Console.WriteLine(Encoding.ASCII.GetString(requestArray));  //тестовая строка для просмотра запросов            
 
             if (requestArray.Length != 0)
             {
