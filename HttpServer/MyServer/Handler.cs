@@ -13,7 +13,7 @@ namespace HttpServer.MyServer
 {
     static class Handler
     {
-        [DllImport(@"control.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(@"C:\Users\Asus\Desktop\V\HttpServer\bin\Debug\netcoreapp2.1\control.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern uint ControlSystemEntryPoint(
     uint ID,
     IntPtr in_params,
@@ -21,7 +21,7 @@ namespace HttpServer.MyServer
   out IntPtr out_params,
    out uint out_byte_count);
 
-        [DllImport(@"control.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(@"C:\Users\Asus\Desktop\V\HttpServer\bin\Debug\netcoreapp2.1\control.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr ControlSystemGetErrorDescription(
         uint code,
         out uint pSize);
@@ -111,9 +111,7 @@ namespace HttpServer.MyServer
                     || candidate.Length > array.Length;
             }
         }
-
-        public const string WebPath = @"\root\web";
-        public const string StoragePath = @"\root\storage";
+     
 
         public static byte[] GetRequestFromArrayAndReturnResponse(byte[] requestArray)
         {
@@ -166,19 +164,35 @@ namespace HttpServer.MyServer
                         else
                             GetParameters(specifiedPart, request, byteReader);
                     }
-                    catch
+                    catch (Exception e)
                     {
-                        request.isBadRequest = true;
+                        request.Parameters["error"] = e.ToString();
                         return;
                     }
                 }
                 if (request.Parameters.ContainsKey("subject") && request.Parameters.ContainsKey("model"))
                 {
-                    request.Parameters["nameOfProcess"] = GetEntryPointToStartModeling(request.Parameters);
+                    try
+                    {
+                        request.Parameters["nameOfProcess"] = GetEntryPointToStartModeling(request.Parameters);
+                    }
+                    catch (Exception e)
+                    {
+                        request.Parameters["error"] = e.ToString();
+                        return;
+                    }
                 }
                 if (request.Parameters.ContainsKey("process"))
                 {
-                    request.Parameters["process"] = GetEntryPointToCheckStatus(request);
+                    try
+                    {
+                        request.Parameters["process"] = GetEntryPointToCheckStatus(request);
+                    }
+                    catch (Exception e)
+                    {
+                        request.Parameters["error"] = e.ToString();
+                        return;
+                    }
                 }
 
             }
@@ -428,6 +442,9 @@ namespace HttpServer.MyServer
             if (request == null)
                 return "Send bad request";
 
+          else if (request.Parameters.ContainsKey("error"))
+                return "Send error message";
+
             else if (request.Method == HttpMethod.GET)
                 return HandleGetRequest(request);
 
@@ -537,7 +554,9 @@ namespace HttpServer.MyServer
                         }
                         else
                         {
-                            filePath = Environment.CurrentDirectory + WebPath + @"\" + @"404.html";
+                            filePath = Environment.CurrentDirectory;
+                             index = filePath.IndexOf("bin");
+                            filePath = filePath.Remove(index) + "web\\" + @"\" + @"404.html";
                             Byte[] bodyArray = File.ReadAllBytes(filePath);
                             sbHeader.AppendLine(
                             version + " " + HttpStatusCode.NotFound + "\r\n" +
@@ -673,6 +692,19 @@ namespace HttpServer.MyServer
                         return responseArray = MakeArray(sbHeader, bodyArray);
 
                     }
+
+                case "Send error message":
+                    {
+                        byte[] bodyArray = Encoding.UTF8.GetBytes(request.Parameters["error"]);
+                        sbHeader.AppendLine(
+                        version + " " + HttpStatusCode.OK + "\r\n" +
+                        "Server: " + serverName + "\r\n" +
+                        "Content-Type: " + "text/html" + "\r\n" +
+                        "Content-Length: " + bodyArray.Length +
+                           "\r\n");
+                        return responseArray = MakeArray(sbHeader, bodyArray);
+                    }
+
 
                 default:
                     {
