@@ -47,6 +47,9 @@
             async: false,
             success: function (msg) {
                 alert(msg);
+                if (msg.includes('Modeling started')) {
+				    window.open("http://127.0.0.1:8080/CheckModelStatusPage.html");
+						}
             },
             error: function(msg) {
                 alert('ќшибка!');

@@ -507,17 +507,31 @@ namespace HttpServer.MyServer
                 case "Send file":
                     {
                         string filePath = Environment.CurrentDirectory;
-                        int index = filePath.IndexOf("bin");                       
+                        int index = filePath.IndexOf("bin"); 
+                        if(request.Parameters["nameOfFileInStartLine"] == "CheckModelStatusPage.html")
+                        filePath = filePath.Remove(index) + "web\\" + "Check model status page.html";
+                        else
                         filePath = filePath.Remove(index) + "storage\\" + $"{request.Parameters["nameOfFileInStartLine"]}";
 
-                        if (File.Exists(filePath))
+                        if (File.Exists(filePath) && request.Parameters["nameOfFileInStartLine"] == "CheckModelStatusPage.html")
+                        {
+                            Byte[] bodyArray = File.ReadAllBytes(filePath);
+                            sbHeader.AppendLine(
+                            version + " " + HttpStatusCode.OK + "\r\n" +
+                            "Server: " + serverName + "\r\n" +
+                            "Content-Type: " + "text/html" + "\r\n" +
+                            "Content-Length: " + bodyArray.Length + 
+                               "\r\n");
+                            return responseArray = MakeArray(sbHeader, bodyArray);
+                        }
+                        else if (File.Exists(filePath))
                         {
                             Byte[] bodyArray = File.ReadAllBytes(filePath);
                             sbHeader.AppendLine(
                             version + " " + HttpStatusCode.OK + "\r\n" +
                             "Server: " + serverName + "\r\n" +
                             "Content-Type: " + "multipart/form-data" + "\r\n" +
-                            "Content-Length: " + bodyArray.Length + 
+                            "Content-Length: " + bodyArray.Length +
                                "\r\n");
                             return responseArray = MakeArray(sbHeader, bodyArray);
                         }
